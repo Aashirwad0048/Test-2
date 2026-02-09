@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Search</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 30px; 
+        }
+
+        input, button { padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        
+        .black-box {
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 10px; 
+        }
+
+        .profile-layout { display: flex; align-items: center; gap: 20px; }
+        .avatar { width: 80px; height: 80px; border-radius: 50%; border: 2px solid #007bff; }
+        a { color: white; text-decoration: none; display: block; font-weight: bold; }
+        h3 { margin-top: 30px; } 
+    </style>
+</head>
+<body>
+
+    <h1>GitHub Search</h1>
+    
+    <div>
+        <input type="text" id="username" placeholder="Enter GitHub username..." style="width: 70%;">
+        <button onclick="getProfile()">Search</button>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        async function getProfile() {
+            const user = document.getElementById('username').value;
+            const result = document.getElementById('result');
+            if (!user) return;
+
+            try {
+                const userRes = await fetch(`https://api.github.com/users/${user}`);
+                const userData = await userRes.json();
+                
+                const repoRes = await fetch(`https://api.github.com/users/${user}/repos?sort=created&per_page=5`);
+                const repoData = await repoRes.json();
+
+                if (!userRes.ok) throw new Error("User not found");
+
+                const repoListHTML = repoData.map(repo => 
+                    `<div class="black-box">
+                        <a href="${repo.html_url}" target="_blank">${repo.name}</a>
+                     </div>`
+                ).join('');
+
+                result.innerHTML = `
+                    <div class="black-box profile-layout">
+                        <img src="${userData.avatar_url}" class="avatar">
+                        <div>
+                            <h2 style="margin:0">${userData.name || userData.login}</h2>
+                            <p style="color:#aaa; margin:5px 0">${userData.bio || "No bio available"}</p>
+                            <small>Followers: ${userData.followers} | Repos: ${userData.public_repos}</small>
+                        </div>
+                    </div>
+
+                    <h3>Latest Repositories</h3>
+                    ${repoListHTML}
+                `;
+
+            } catch (err) {
+                result.innerHTML = `<p style="color:red; font-weight:bold">${err.message}</p>`;
+            }
+        }
+    </script>
+
+</body>
+</html>
